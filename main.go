@@ -1,12 +1,13 @@
 package main
 
 import (
-	"crypto/rand"
 	"flag"
 	"fmt"
+	"math/rand"
 	"net"
+	"time"
 
-	"github.com/google/uuid"
+	"github.com/gofrs/uuid"
 )
 
 var (
@@ -19,37 +20,51 @@ func init() {
 }
 
 func main() {
+	rand.Seed(time.Now().Unix())
 	for i := 1; i <= count; i++ {
-		fmt.Println(generateUUID1())
+		fmt.Println(genUUIDv1(genRandomMac()))
 	}
 
 }
 
-func generateUUID1() string {
-	mac := generateMac()
-	uuid.SetNodeID([]byte(mac))
+func genUUIDv1(mac string) string {
+	fn := func() (net.HardwareAddr, error) {
+		addr, err := net.ParseMAC(mac)
+		if err != nil {
+			fmt.Println("lol")
+			panic(err)
+		}
+		return addr, nil
+	}
 
-	result, err := uuid.NewUUID()
+	var g *uuid.Gen
+	var err error
+	var id uuid.UUID
+
+	g = uuid.NewGenWithHWAF(fn)
+	if g == nil {
+		panic("unexpectedly nil")
+	}
+
+	id, err = g.NewV1()
 	if err != nil {
 		panic(err)
 	}
 
-	return result.String()
+	return fmt.Sprint(id)
 }
 
-func generateMac() net.HardwareAddr {
+func genRandomMac() string {
 	buf := make([]byte, 6)
-	var mac net.HardwareAddr
-
 	_, err := rand.Read(buf)
 	if err != nil {
 		panic(err)
 	}
 
-	// // Set the local bit
-	// buf[0] |= 2
+	// Set the unicast bit
+	buf[0] <<= 0
 
-	mac = append(mac, buf[0], buf[1], buf[2], buf[3], buf[4], buf[5])
+	mac := fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5])
 
 	return mac
 }
