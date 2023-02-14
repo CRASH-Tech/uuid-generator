@@ -55,16 +55,13 @@ func genUUIDv1(mac string) string {
 }
 
 func genRandomMac() string {
-	buf := make([]byte, 6)
+	buf := make([]byte, 4)
 	_, err := rand.Read(buf)
 	if err != nil {
 		panic(err)
 	}
 
-	// Set the unicast bit
-	buf[0] <<= 0
-
-	mac := fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5])
+	mac := fmt.Sprintf("54:52:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[2])
 
 	return mac
 }
